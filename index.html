@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Trader Joe's Meal Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --cream:#FAF7F2;--bark:#1E1208;--forest:#1A3A2A;--sage:#4A7C59;--leaf:#7DB87A;
+  --sand:#E8DFD0;--rust:#C8102E;--rust-light:#FCEEF0;--gold:#B8860B;
+  --warm:#FFFDF9;--muted:#888;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--bark);font-size:15px}
+.app{max-width:430px;margin:0 auto;background:var(--warm);min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.topbar{background:var(--forest);padding:18px 16px 14px;flex-shrink:0;position:relative;overflow:hidden}
+.topbar::before{content:'';position:absolute;right:-30px;bottom:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.03)}
+.topbar::after{content:'';position:absolute;right:30px;bottom:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.04)}
+.tbar-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{width:38px;height:38px;border-radius:50%;background:var(--rust);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.2)}
+.brand-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:#fff;line-height:1;letter-spacing:-.3px}
+.brand-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;font-style:italic}
+.tbar-nav{display:flex;gap:5px;padding-top:3px;flex-wrap:wrap;justify-content:flex-end}
+.tnav{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:500;color:rgba(255,255,255,.75);cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.tnav:hover,.tnav.on{background:rgba(255,255,255,.2);color:#fff}
+.tnav .cnt{background:var(--rust);color:#fff;font-size:9px;padding:1px 5px;border-radius:100px;margin-left:1px;font-weight:600}
+.tagline{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+.tagline-text{font-size:12px;color:rgba(255,255,255,.6);font-style:italic;line-height:1.4}
+.tagline-text strong{color:rgba(255,255,255,.9);font-style:normal}
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px}
+.scr{display:none;flex-direction:column;gap:0;animation:fu .2s ease}
+.scr.on{display:flex}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.section{padding:16px 16px 0}
+.eyebrow{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--sage);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.eyebrow::after{content:'';flex:1;height:.5px;background:var(--sand)}
+.cat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.catb{border-radius:14px;padding:13px 8px 11px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;border:2px solid transparent;transition:transform .15s,border-color .15s,opacity .15s}
+.catb:active{transform:scale(.97)}
+.catb.green{background:linear-gradient(145deg,#E8F5E2,#D0EBC8)}
+.catb.green.on{border-color:#3B6D11;box-shadow:0 0 0 3px rgba(59,109,17,.1)}
+.catb.amber{background:linear-gradient(145deg,#FDF0DC,#FAE3B8)}
+.catb.amber.on{border-color:#854F0B;box-shadow:0 0 0 3px rgba(133,79,11,.1)}
+.catb.rust{background:linear-gradient(145deg,#FAECE7,#F5D5CC)}
+.catb.rust.on{border-color:#993C1D;box-shadow:0 0 0 3px rgba(153,60,29,.1)}
+.catb.dimmed{opacity:.35}
+.cat-emoji{font-size:24px;line-height:1}
+.cat-name{font-family:'Playfair Display',serif;font-size:12px;font-weight:700;line-height:1.2}
+.green .cat-name{color:#27500A}
+.amber .cat-name{color:#633806}
+.rust .cat-name{color:#712B13}
+.cat-desc{font-size:9px;font-weight:400}
+.green .cat-desc{color:#4A7C59}
+.amber .cat-desc{color:#854F0B}
+.rust .cat-desc{color:#993C1D}
+.benefit-block{margin:14px 16px 0;border:1px solid var(--sand);border-radius:14px;overflow:hidden}
+.benefit-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;cursor:pointer;user-select:none;background:var(--warm)}
+.benefit-hdr-l{display:flex;align-items:center;gap:7px}
+.bhdr-title{font-size:12px;font-weight:600;color:var(--bark)}
+.bhdr-active{font-size:10px;background:var(--forest);color:#fff;padding:2px 8px;border-radius:100px}
+.bchev{font-size:13px;color:var(--sage);transition:transform .2s;display:inline-block}
+.bchev.open{transform:rotate(180deg)}
+.benefit-body{padding:11px 13px 13px;border-top:1px solid var(--sand);display:none;background:var(--warm)}
+.benefit-body.open{display:block}
+.bf-wrap{display:flex;gap:5px;flex-wrap:wrap}
+.btag{font-size:16px;width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;transition:transform .12s,border-color .12s;position:relative;background:var(--sand)}
+.btag:active{transform:scale(.92)}
+.btag.on{border-color:var(--forest)}
+.btag.dimmed{opacity:.22;pointer-events:none}
+.btag-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bark);color:#fff;font-size:10px;padding:3px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:20;font-family:'DM Sans',sans-serif}
+.btag:hover .btag-tip{display:block}
+.bt-heart{background:#FBEAF0}
+.bt-bp{background:#FAECE7}
+.bt-brain{background:#EEEDFE}
+.bt-gut{background:#E1F5EE}
+.bt-muscle{background:#EAF3DE}
+.bt-immune{background:#E6F1FB}
+.bt-energy{background:#FAEEDA}
+.bt-skin{background:#FBEAF0}
+.bt-bone{background:#F1EFE8}
+.bt-weight{background:#EAF3DE}
+.bt-eye{background:#E6F1FB}
+.bt-anti{background:#EEEDFE}
+.bf-foot{display:flex;justify-content:flex-end;margin-top:9px}
+.clr-link{font-size:11px;color:var(--rust);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.time-row{padding:10px 16px 0;display:flex;gap:6px;flex-wrap:wrap}
+.fp{font-size:11px;padding:6px 12px;border-radius:100px;border:1.5px solid var(--sand);background:var(--warm);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;font-weight:500}
+.fp:active{transform:scale(.97)}
+.fp.on{background:var(--forest);color:#fff;border-color:var(--forest)}
+.browse-summary{padding:8px 16px 0;font-size:12px;color:var(--sage);font-weight:500}
+.meals-area{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.cat-divider{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--sage);padding:4px 0 2px;display:flex;align-items:center;gap:8px}
+.cat-divider::after{content:'';flex:1;height:.5px;background:var(--sand)}
+.meal-card{background:var(--warm);border:1.5px solid var(--sand);border-radius:16px;overflow:hidden;transition:border-color .15s,box-shadow .15s;cursor:pointer}
+.meal-card:active{transform:scale(.99)}
+.meal-card.inc{border-color:var(--sage);box-shadow:0 0 0 3px rgba(74,124,89,.1)}
+.meal-card-top{padding:13px 13px 10px}
+.meal-row1{display:flex;align-items:flex-start;gap:9px}
+.meal-left{flex:1;min-width:0}
+.meal-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--bark);line-height:1.3}
+.meal-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.meal-dot{width:3px;height:3px;border-radius:50%;background:var(--sand)}
+.meal-actions{display:flex;gap:6px;flex-shrink:0}
+.mib{width:32px;height:32px;border-radius:9px;border:1.5px solid var(--sand);background:var(--warm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s}
+.mib:active{transform:scale(.9)}
+.mib.fon{color:var(--rust);border-color:#F5C0C8;background:var(--rust-light)}
+.mib.con{color:var(--sage);border-color:var(--leaf);background:#EAF3DE}
+.meal-tags{display:flex;gap:4px;flex-wrap:wrap;padding:9px 13px 11px;border-top:1px solid var(--sand);background:rgba(250,247,242,.6)}
+.m-btag{font-size:14px;width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px solid transparent;transition:border-color .12s,transform .1s;position:relative}
+.m-btag:active{transform:scale(.9)}
+.m-btag.on{border-color:var(--forest)}
+.m-btag .btag-tip{display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--bark);color:#fff;font-size:9px;padding:3px 7px;border-radius:5px;white-space:nowrap;z-index:20}
+.m-btag:hover .btag-tip{display:block}
+.modal-overlay{position:fixed;inset:0;background:rgba(20,10,5,.6);z-index:100;display:none;align-items:flex-end;justify-content:center;padding:0}
+.modal-overlay.open{display:flex;animation:fdin .2s ease}
+@keyframes fdin{from{opacity:0}to{opacity:1}}
+.modal{background:var(--warm);border-radius:22px 22px 0 0;width:100%;max-width:430px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:slideup .25s cubic-bezier(.22,.68,0,1.2);padding-bottom:env(safe-area-inset-bottom,16px)}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--sand);margin:12px auto 0}
+.modal-inner{padding:18px 20px 24px}
+.modal-cat-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--sage);margin-bottom:6px}
+.modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--bark);line-height:1.2;margin-bottom:4px}
+.modal-meta{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.modal-serves{font-size:11px;color:var(--sage);font-weight:500;margin-bottom:14px}
+.modal-synopsis{font-size:13px;color:#555;line-height:1.65;margin-bottom:14px;padding:12px 14px;background:var(--cream);border-radius:12px;border-left:3px solid var(--leaf)}
+.modal-section-title{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--sage);margin-bottom:8px;margin-top:14px}
+.modal-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.modal-btag{font-size:12px;padding:5px 10px;border-radius:100px;font-weight:500;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.modal-ing-list{display:flex;flex-direction:column;gap:6px}
+.modal-ing{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--cream);border-radius:10px}
+.modal-ing-name{font-size:13px;color:var(--bark)}
+.modal-ing-qty{font-size:11px;color:var(--muted);white-space:nowrap;font-weight:500}
+.modal-actions{display:flex;gap:8px;margin-top:18px}
+.mbtn{flex:1;padding:13px;border-radius:12px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px solid var(--sand);background:var(--warm);color:var(--bark);transition:all .15s}
+.mbtn:active{transform:scale(.97)}
+.mbtn.primary{background:var(--forest);color:#fff;border-color:var(--forest)}
+.mbtn.fav{color:var(--rust);border-color:#F5C0C8;background:var(--rust-light)}
+.mbtn.fav.on{background:var(--rust);color:#fff;border-color:var(--rust)}
+.inner{padding:18px 16px}
+.shdr{margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between}
+.s-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--bark)}
+.s-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.sel-card{background:var(--warm);border:1.5px solid var(--sand);border-radius:14px;padding:12px 13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;cursor:pointer}
+.sel-stripe{width:4px;border-radius:2px;flex-shrink:0;align-self:stretch;min-height:40px}
+.sel-info{flex:1;min-width:0}
+.sel-name{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:var(--bark);line-height:1.3}
+.sel-meta{font-size:11px;color:var(--muted);margin-top:2px;margin-bottom:7px}
+.sel-btags{display:flex;gap:4px;flex-wrap:wrap}
+.sel-xbtn{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--sand);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:#aaa;flex-shrink:0}
+.abar{display:flex;gap:8px;margin-top:14px}
+.abtn{flex:1;padding:13px;border-radius:12px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px solid var(--sand);background:var(--warm);color:var(--bark);transition:all .15s}
+.abtn:active{transform:scale(.97)}
+.abtn.primary{background:var(--forest);color:#fff;border-color:var(--forest)}
+.ing-row{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--warm);border:1.5px solid var(--sand);border-radius:11px;margin-bottom:6px;transition:opacity .2s}
+.ing-row.ckd{opacity:.35}
+.ing-cb{width:18px;height:18px;border-radius:5px;border:1.5px solid #ccc;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:all .15s}
+.ing-cb.on{background:var(--sage);border-color:var(--sage);color:#fff}
+.ing-name{flex:1;font-size:13px;color:var(--bark)}
+.ing-qty{font-size:11px;color:var(--muted);white-space:nowrap}
+.multi-pill{font-size:9px;background:var(--forest);color:rgba(255,255,255,.85);padding:1px 5px;border-radius:100px;margin-left:4px;font-weight:600}
+.empty-state{text-align:center;padding:40px 20px;color:#bbb}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty-msg{font-size:13px;line-height:1.7;color:var(--muted)}
+.exp-box{background:var(--cream);border:1px solid var(--sand);border-radius:10px;padding:13px;font-size:10px;color:var(--bark);font-family:'Courier New',monospace;white-space:pre-wrap;line-height:1.7;word-break:break-word;margin-top:10px}
+.ghost-btn{font-size:12px;color:var(--rust);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;font-weight:500}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <div class="tbar-inner">
+    <div class="brand">
+      <div class="brand-logo">TJ</div>
+      <div>
+        <div class="brand-title">Trader Joe's</div>
+        <div class="brand-sub">Meal Finder · feeds 2</div>
+      </div>
+    </div>
+    <div class="tbar-nav">
+      <button class="tnav on" onclick="sw('browse')" id="t-browse">Browse</button>
+      <button class="tnav" onclick="sw('selected')" id="t-selected">Meals <span class="cnt" id="sb" style="display:none">0</span></button>
+      <button class="tnav" onclick="sw('cart')" id="t-cart">Cart <span class="cnt" id="cb" style="display:none">0</span></button>
+      <button class="tnav" onclick="sw('favs')" id="t-favs">♡</button>
+    </div>
+  </div>
+  <div class="tagline">
+    <div class="tagline-text">No more <strong>100-tab recipe rabbit holes.</strong> Just grab it at TJ's and cook. 🛒</div>
+  </div>
+</div>
+
+<div class="body">
+
+<div id="s-browse" class="scr on">
+  <div class="section">
+    <div class="eyebrow">What are we eating?</div>
+    <div class="cat-grid" id="cat-grid"></div>
+  </div>
+  <div class="benefit-block">
+    <div class="benefit-hdr" onclick="toggleBenefits()">
+      <div class="benefit-hdr-l">
+        <span class="bhdr-title">Filter by health benefit</span>
+        <span class="bhdr-active" id="bhdr-active" style="display:none"></span>
+      </div>
+      <span class="bchev" id="bchev">▾</span>
+    </div>
+    <div class="benefit-body" id="benefit-body">
+      <div class="bf-wrap" id="bf-wrap"></div>
+      <div class="bf-foot">
+        <button class="clr-link" id="clr-tag" onclick="clearBenefit()" style="display:none">Clear filter ✕</button>
+      </div>
+    </div>
+  </div>
+  <div class="time-row">
+    <button class="fp on" onclick="setTime('all',this)">All times</button>
+    <button class="fp" onclick="setTime('quick',this)">⚡ Under 20 min</button>
+    <button class="fp" onclick="setTime('few',this)">📋 5 or fewer items</button>
+  </div>
+  <div class="browse-summary" id="bsummary"></div>
+  <div class="meals-area" id="meals-area"></div>
+</div>
+
+<div id="s-selected" class="scr">
+  <div class="inner">
+    <div class="shdr">
+      <div><div class="s-title">My meals</div><div class="s-sub" id="sel-sub">Nothing added yet</div></div>
+      <button class="ghost-btn" onclick="clearCart()">Clear all</button>
+    </div>
+    <div id="sel-body"></div>
+  </div>
+</div>
+
+<div id="s-cart" class="scr">
+  <div class="inner">
+    <div class="shdr">
+      <div><div class="s-title">Shopping list</div><div class="s-sub" id="cart-sub">All ingredients, one list</div></div>
+      <button class="ghost-btn" onclick="clearCart()">Clear</button>
+    </div>
+    <div id="cart-body"></div>
+  </div>
+</div>
+
+<div id="s-favs" class="scr">
+  <div class="inner">
+    <div class="shdr"><div><div class="s-title">Saved meals</div><div class="s-sub">Remembered between sessions</div></div></div>
+    <div id="favs-body"></div>
+  </div>
+</div>
+
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-inner" id="modal-inner"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const SK_C='tj8_c',SK_F='tj8_f',SK_K='tj8_k';
+const catDefs=[
+  {id:'healthy',label:'Healthy',emoji:'🥗',desc:'Great for you',cls:'green',dot:'#4A7C59'},
+  {id:'neutral',label:'Neutral',emoji:'⚖️',desc:'Balanced',cls:'amber',dot:'#BA7517'},
+  {id:'cheat',label:'Cheat meal',emoji:'🍕',desc:'Treat yourself',cls:'rust',dot:'#D85A30'},
+];
+const BT={
+  heart:{cls:'bt-heart',emoji:'❤️',lbl:'Heart health'},
+  bp:{cls:'bt-bp',emoji:'🩺',lbl:'Blood pressure'},
+  brain:{cls:'bt-brain',emoji:'🧠',lbl:'Brain & memory'},
+  gut:{cls:'bt-gut',emoji:'🌿',lbl:'Gut health'},
+  muscle:{cls:'bt-muscle',emoji:'💪',lbl:'Muscle recovery'},
+  immune:{cls:'bt-immune',emoji:'🛡️',lbl:'Immune support'},
+  energy:{cls:'bt-energy',emoji:'⚡',lbl:'Energy'},
+  skin:{cls:'bt-skin',emoji:'✨',lbl:'Skin health'},
+  bone:{cls:'bt-bone',emoji:'🦴',lbl:'Bone strength'},
+  weight:{cls:'bt-weight',emoji:'⚖️',lbl:'Weight management'},
+  eye:{cls:'bt-eye',emoji:'👁️',lbl:'Eye health'},
+  anti:{cls:'bt-anti',emoji:'🔬',lbl:'Anti-inflammatory'},
+};
+const M={
+healthy:[
+  {id:'h1',name:'Salmon & Quinoa Bowl',time:25,benefits:['heart','brain','anti','bp'],synopsis:"Think of this as the meal that makes you feel like you've got your life together. Omega-3-packed salmon over nutty quinoa with peppery arugula. It tastes way better than it sounds, even to a former chicken-nuggets-only crowd.",ing:[{n:'Atlantic salmon fillet',q:'12 oz (2 fillets)'},{n:'Organic tricolor quinoa',q:'1 cup dry'},{n:'Baby arugula',q:'4 cups'},{n:'Lemon juice',q:'3 tbsp'},{n:'Extra virgin olive oil',q:'2 tbsp'},{n:'Everything But the Bagel seasoning',q:'to taste'}]},
+  {id:'h2',name:'Lentil & Veggie Stew',time:30,benefits:['gut','heart','weight','bp'],synopsis:"Basically a big cozy hug in a bowl. Lentils are secretly filling and stupidly cheap. This one'll make you feel virtuous without tasting like cardboard. Big batch, great leftovers.",ing:[{n:'Organic green lentils',q:'1½ cups'},{n:'Mirepoix mix',q:'1 bag'},{n:'Organic diced tomatoes',q:'1 can'},{n:'Low-sodium vegetable broth',q:'3 cups'},{n:'Garlic cloves',q:'4'}]},
+  {id:'h3',name:'Grilled Chicken & Asparagus',time:20,benefits:['muscle','weight','immune','bone'],synopsis:"The no-excuses weeknight dinner. Lean chicken, crispy asparagus, done in 20 minutes. Season it well and it actually slaps. Pair with lemon and you're basically a functioning adult.",ing:[{n:'Air chilled chicken breasts',q:'2 large (about 1.5 lb)'},{n:'Asparagus',q:'1 bunch'},{n:'Lemon pepper seasoning',q:'2 tsp'},{n:'Olive oil spray',q:'as needed'},{n:'Lemon',q:'1, for serving'}]},
+  {id:'h4',name:'Oat & Berry Breakfast Bowl',time:10,benefits:['heart','gut','energy','anti'],synopsis:"Not your sad desk oatmeal. Creamy oats, frozen berries that melt into jammy little pockets, crunchy almonds on top. Takes 10 minutes and keeps you full until 2pm.",ing:[{n:'Rolled oats',q:'1½ cups'},{n:'Organic mixed berries (frozen)',q:'1 cup'},{n:'Almond milk',q:'2 cups'},{n:'Chia seeds',q:'2 tbsp'},{n:'Raw almonds',q:'2 oz'}]},
+  {id:'h5',name:'Walnut Apple Spinach Salad',time:10,benefits:['heart','brain','anti','eye'],synopsis:"Sounds like a sad salad. Is not a sad salad. The walnuts give crunch, apple gives sweetness, balsamic ties it all together. You'll be shocked this took 10 minutes and zero skill.",ing:[{n:'Organic baby spinach',q:'6 cups'},{n:'Organic gala apple',q:'1 large'},{n:'Walnuts',q:'½ cup'},{n:'Organic balsamic vinaigrette',q:'3 tbsp'},{n:'Dried cranberries',q:'3 tbsp'}]},
+  {id:'h6',name:'Black Bean Tacos',time:20,benefits:['gut','heart','weight','muscle'],synopsis:"Plant-based tacos that don't make you miss meat. Smash the beans a little, season them up, load the tortillas with cabbage and avocado. These go fast — make extra.",ing:[{n:'Organic black beans',q:'2 cans'},{n:'Corn tortillas',q:'8–10'},{n:'Organic salsa verde',q:'½ cup'},{n:'Shredded cabbage mix',q:'2 cups'},{n:'Hass avocados',q:'1 large'}]},
+  {id:'h7',name:'Baked Cod with Roasted Veggies',time:30,benefits:['heart','bp','weight','immune'],synopsis:"Cod is mild, flaky, and impossible to mess up. Roast everything on one pan, squeeze lemon over it, and call yourself a cook. Seriously — this is that good.",ing:[{n:'Atlantic cod fillets',q:'2 large (about 1.2 lb)'},{n:'Organic broccoli florets',q:'3 cups'},{n:'Cherry tomatoes',q:'1½ cups'},{n:'Garlic herb seasoning',q:'2 tsp'},{n:'Extra virgin olive oil',q:'3 tbsp'}]},
+  {id:'h8',name:'Egg & Avocado Breakfast Plate',time:10,benefits:['brain','muscle','energy','skin'],synopsis:"Scramble some eggs, slice an avocado, fry some bacon. This is the breakfast that turns mornings from chaotic to calm. No recipe needed, just vibes and a pan.",ing:[{n:'Free range eggs',q:'4'},{n:'Hass avocados',q:'1 large'},{n:'Uncured bacon',q:'4–5 strips'},{n:'Sea salt & black pepper',q:'to taste'},{n:'Hot sauce (optional)',q:'to taste'}]},
+  {id:'h9',name:'Zucchini Noodles with Pesto Shrimp',time:20,benefits:['weight','muscle','anti','skin'],synopsis:"Low-carb pasta that actually satisfies. The shrimp cook in 3 minutes, the pesto does all the flavor heavy lifting. You'll forget you're eating a vegetable.",ing:[{n:'Zucchini spirals (frozen)',q:'2 bags'},{n:'Raw shrimp (frozen)',q:'1 lb'},{n:'Genova pesto',q:'4 tbsp'},{n:'Parmesan shavings',q:'3 tbsp'},{n:'Cherry tomatoes',q:'1 cup'}]},
+  {id:'h10',name:'White Bean & Kale Soup',time:30,benefits:['gut','immune','bone','heart'],synopsis:"Rustic, filling, and tastes like it simmered all day. It didn't. Dump everything in a pot, walk away for 25 minutes, eat. Dunking sourdough in this is a top-5 life move.",ing:[{n:'Organic white beans',q:'2 cans'},{n:'Organic chopped kale',q:'3 cups'},{n:'Low-sodium vegetable broth',q:'4 cups'},{n:'Organic diced tomatoes',q:'1 can'},{n:'Garlic cloves',q:'4'},{n:'Italian seasoning',q:'1½ tsp'}]},
+  {id:'h11',name:'Turkey Meatball Bowl',time:25,benefits:['muscle','weight','immune','energy'],synopsis:"All the comfort of spaghetti and meatballs, but actually decent for you. Turkey keeps it lean, marinara makes it feel indulgent. This one gets requested on repeat.",ing:[{n:'Ground turkey',q:'1 lb'},{n:'Organic brown rice',q:'1½ cups'},{n:'Organic tomato basil marinara',q:'1 cup'},{n:'Parmesan shavings',q:'3 tbsp'},{n:'Italian seasoning',q:'1½ tsp'}]},
+  {id:'h12',name:'Teriyaki Chicken & Broccoli',time:20,benefits:['muscle','immune','bone','energy'],synopsis:"Better than takeout and ready in the same time it takes to find the menu. The Soyaki sauce from TJ's is the secret weapon here — sticky, sweet, and does all the work.",ing:[{n:'Air chilled chicken breasts',q:'2 large'},{n:'Soyaki sauce',q:'4 tbsp'},{n:'Jasmine rice',q:'1½ cups dry'},{n:'Organic broccoli florets',q:'2 cups'},{n:'Sesame seeds',q:'1 tbsp'}]},
+  {id:'h13',name:'Butternut Squash Soup',time:15,benefits:['immune','eye','anti','gut'],synopsis:"This is the TJ's cheat code — they sell it pre-made in a carton. Warm it up, swirl in coconut milk, top with pumpkin seeds. Looks impressive, takes 10 minutes.",ing:[{n:'Butternut squash soup (carton)',q:'2 cartons'},{n:'Organic coconut milk',q:'½ cup'},{n:'Pumpkin seeds',q:'3 tbsp'},{n:'Fresh sage',q:'few leaves'},{n:'Sourdough bread (for dipping)',q:'4 slices'}]},
+  {id:'h14',name:'Greek Salad with Chickpeas',time:10,benefits:['heart','gut','bone','weight'],synopsis:"Crispy cucumbers, juicy tomatoes, salty feta, briny olives, chickpeas for protein. This salad actually fills you up. Tastes like a Greek vacation without the 14-hour flight.",ing:[{n:'Organic chickpeas',q:'2 cans'},{n:'Mini cucumbers',q:'4'},{n:'Cherry tomatoes',q:'1½ cups'},{n:'Kalamata olives',q:'½ cup'},{n:'Feta cheese crumbles',q:'4 oz'},{n:'Greek vinaigrette',q:'4 tbsp'}]},
+  {id:'h15',name:'Sweet Potato Black Bean Chili',time:35,benefits:['gut','immune','energy','bp'],synopsis:"Thick, smoky, hearty chili that happens to have zero meat. The sweet potato melts into the chili and adds natural sweetness. Top with whatever you've got — sour cream, cheese, hot sauce.",ing:[{n:'Sweet potatoes',q:'2 large'},{n:'Organic black beans',q:'2 cans'},{n:'Organic diced tomatoes',q:'1 can'},{n:'Low-sodium vegetable broth',q:'2 cups'},{n:'Chili powder blend',q:'2½ tsp'},{n:'Garlic cloves',q:'4'}]},
+  {id:'h16',name:'Shrimp & Veggie Stir Fry',time:15,benefits:['muscle','weight','immune','anti'],synopsis:"Weeknight winner. Shrimp cook in literally 3 minutes, the frozen veggie bag does all the prep work, and the sesame ginger sauce pulls it all together. Serve over rice and you're a hero.",ing:[{n:'Raw shrimp (frozen)',q:'1 lb'},{n:'Stir fry vegetables (frozen)',q:'1 large bag'},{n:'Soyaki sauce',q:'4 tbsp'},{n:'Organic brown rice',q:'1½ cups'},{n:'Sesame ginger dressing',q:'2 tbsp'}]},
+  {id:'h17',name:'Tuna & White Bean Salad',time:10,benefits:['heart','brain','muscle','bp'],synopsis:"Mediterranean-style, no cooking required. Crack open some cans, chop a tomato, drizzle olive oil, squeeze lemon. Tastes like you spent 45 minutes on it. You didn't.",ing:[{n:'Albacore tuna in water',q:'2 cans (10 oz total)'},{n:'Organic white beans',q:'1 can'},{n:'Cherry tomatoes',q:'1 cup'},{n:'Extra virgin olive oil',q:'3 tbsp'},{n:'Lemon juice',q:'2 tbsp'},{n:'Red onion',q:'¼ small'}]},
+  {id:'h18',name:'Cottage Cheese Berry Bowl',time:5,benefits:['muscle','bone','gut','skin'],synopsis:"High-protein, zero cooking. Scoop, pour, crunch. This one sounds like diet food but tastes genuinely good — especially when the berries are thawed and jammy. Great lazy breakfast or snack.",ing:[{n:'Lowfat cottage cheese',q:'2 cups'},{n:'Organic mixed berries (frozen/fresh)',q:'1 cup'},{n:'Chia seeds',q:'2 tbsp'},{n:'Raw almonds',q:'2 oz'},{n:'Honey',q:'2 tsp'}]},
+  {id:'h19',name:'Salmon with Lemon-Dill Sauce',time:25,benefits:['heart','brain','skin','anti'],synopsis:"Restaurant-level salmon with a 3-ingredient sauce. Greek yogurt + dill + lemon = a bright, creamy sauce that makes salmon taste like you know what you're doing. Pair with spinach sautéed in olive oil.",ing:[{n:'Atlantic salmon fillets',q:'2 (about 12 oz total)'},{n:'Greek yogurt',q:'¾ cup'},{n:'Fresh dill',q:'3 tbsp'},{n:'Lemon juice',q:'3 tbsp'},{n:'Organic spinach',q:'3 cups'}]},
+  {id:'h20',name:'Ribeye & Cauliflower Mash',time:30,benefits:['muscle','bone','energy','brain'],synopsis:"Steak and (fake) mashed potatoes. Cauliflower mash actually slaps when you do it right — butter, garlic, a little parmesan. The ribeye takes 8 minutes. This is the grown-up dinner you've been putting off.",ing:[{n:'USDA Choice ribeye steak',q:'2 steaks (about 1.5 lb)'},{n:'Cauliflower florets',q:'4 cups'},{n:'Unsalted butter',q:'3 tbsp'},{n:'Garlic cloves',q:'3'},{n:'Steakhouse seasoning',q:'to taste'}]},
+],
+neutral:[
+  {id:'n1',name:'Avocado Toast with Poached Egg',time:15,benefits:['heart','brain','energy','skin'],synopsis:"The millennial cliché that's actually legitimately good. Creamy avocado, runny poached egg, a shower of Everything seasoning. Yes, it's worth the hype. No, you don't need a fancy brunch spot.",ing:[{n:'Sprouted whole wheat bread',q:'4 slices'},{n:'Hass avocados',q:'2 medium'},{n:'Free range eggs',q:'2'},{n:'Everything But the Bagel seasoning',q:'to taste'},{n:'Red pepper flakes',q:'pinch'}]},
+  {id:'n2',name:'Caprese Salad with Prosciutto',time:5,benefits:['bone','heart','immune'],synopsis:"Five ingredients, zero cooking, pure elegance. Fresh mozzarella, ripe tomatoes, prosciutto draped over the top, balsamic glaze. This is the dinner you make when you don't want to cook but still want to feel fancy.",ing:[{n:'Fresh mozzarella',q:'8 oz'},{n:'Heirloom tomatoes',q:'3 medium'},{n:'Prosciutto di Parma',q:'4 oz'},{n:'Fresh basil',q:'large handful'},{n:'Balsamic glaze',q:'2 tbsp'}]},
+  {id:'n3',name:'Tofu Veggie Stir Fry',time:25,benefits:['heart','bone','muscle','anti'],synopsis:"Before you scroll past this — hear me out. Press the tofu, get it crispy, and suddenly it tastes completely different. The Soyaki sauce saves everything. Even confirmed tofu skeptics come around on this one.",ing:[{n:'Organic extra-firm tofu',q:'2 blocks (28 oz)'},{n:'Stir fry vegetables (frozen)',q:'1 large bag'},{n:'Soyaki sauce',q:'4 tbsp'},{n:'Organic brown rice',q:'1½ cups'},{n:'Sesame seeds',q:'2 tsp'}]},
+  {id:'n4',name:'Mediterranean Stuffed Peppers',time:40,benefits:['heart','gut','immune','eye'],synopsis:"Looks wildly impressive. Is not that hard. Stuff peppers with rice, spinach, tomatoes, and feta, bake until tender. The kind of dinner you photograph before eating.",ing:[{n:'Large bell peppers',q:'4'},{n:'Organic brown rice',q:'1 cup dry'},{n:'Feta cheese crumbles',q:'½ cup'},{n:'Organic spinach',q:'2 cups'},{n:'Organic diced tomatoes',q:'1 can'}]},
+  {id:'n5',name:'Falafel Bowl',time:20,benefits:['gut','energy','muscle'],synopsis:"TJ's frozen falafel is genuinely great — crispy outside, herby inside. Serve over quinoa with arugula and tzatziki. This is the meal that converts people who think healthy food is boring.",ing:[{n:'Falafel (frozen)',q:'12 pieces'},{n:'Organic quinoa',q:'1½ cups'},{n:'Baby arugula',q:'3 cups'},{n:'Tzatziki dip',q:'½ cup'},{n:'Cherry tomatoes',q:'1 cup'}]},
+  {id:'n6',name:'Greek Chicken Pita',time:15,benefits:['muscle','bone','immune'],synopsis:"A gyro-inspired pita that comes together fast. Season the chicken well, stuff into pitas with tzatziki and vegetables. Casual enough for a Tuesday, good enough to brag about.",ing:[{n:'Air chilled chicken breasts',q:'1.5 lb'},{n:'Whole wheat pita',q:'4'},{n:'Tzatziki dip',q:'½ cup'},{n:'Mini cucumbers',q:'3'},{n:'Cherry tomatoes',q:'1 cup'},{n:'Organic spring mix',q:'2 cups'}]},
+  {id:'n7',name:'Eggplant & Tomato Pasta',time:30,benefits:['heart','anti','gut'],synopsis:"The Italian grandmother you never had would approve of this. Soft, jammy eggplant in a marinara that coats every piece of penne. This one tastes like it took all afternoon.",ing:[{n:'Organic penne pasta',q:'12 oz'},{n:'Japanese eggplant',q:'2 medium'},{n:'Organic tomato basil marinara',q:'1 jar'},{n:'Fresh basil',q:'large handful'},{n:'Parmesan shavings',q:'4 tbsp'}]},
+  {id:'n8',name:'Mushroom Risotto',time:30,benefits:['immune','brain','energy'],synopsis:"Risotto sounds scary. It's just rice you stir for 20 minutes while listening to a podcast. The result is creamy, savory, restaurant-quality comfort food. Worth every stir.",ing:[{n:'Arborio rice',q:'1½ cups'},{n:'Cremini mushroom medley',q:'12 oz'},{n:'Low-sodium vegetable broth',q:'4 cups'},{n:'Parmesan shavings',q:'½ cup'},{n:'Unsalted butter',q:'3 tbsp'},{n:'Garlic cloves',q:'3'}]},
+  {id:'n9',name:'Breakfast Burrito',time:15,benefits:['muscle','energy','bone'],synopsis:"The breakfast of champions and sleepy people alike. Scrambled eggs, chorizo, cheese, salsa — all wrapped up and ready to demolish. Make two, eat one now, save one for tomorrow.",ing:[{n:'Large flour tortillas',q:'4'},{n:'Free range eggs',q:'4'},{n:'Shredded pepper jack cheese',q:'½ cup'},{n:'Salsa',q:'½ cup'},{n:'Uncured chorizo',q:'4 oz'}]},
+  {id:'n10',name:'Beet & Goat Cheese Salad',time:10,benefits:['bp','anti','gut','eye'],synopsis:"Earthy beets, creamy goat cheese, candied walnuts, and bitter greens. This is the salad that makes you realize you've had boring salads your whole life. Stunning to look at, effortless to make.",ing:[{n:'Steamed baby beets',q:'2 packs'},{n:'Goat cheese crumbles',q:'4 oz'},{n:'Organic spring mix',q:'5 cups'},{n:'Candied walnuts',q:'¼ cup'},{n:'Champagne vinaigrette',q:'3 tbsp'}]},
+  {id:'n11',name:'Edamame & Brown Rice Bowl',time:15,benefits:['muscle','heart','bone','weight'],synopsis:"The meal prep MVP. Protein from edamame, fiber from rice, creaminess from avocado, crunch from carrots. Soyaki sauce is the finishing move. Easy to double for the week.",ing:[{n:'Shelled edamame',q:'2 cups'},{n:'Organic brown rice',q:'1½ cups dry'},{n:'Shredded carrots',q:'1 cup'},{n:'Soyaki sauce',q:'3 tbsp'},{n:'Hass avocados',q:'1'}]},
+  {id:'n12',name:'Smoked Salmon Cream Cheese Bites',time:5,benefits:['brain','heart','skin','bp'],synopsis:"No cooking. Just assembly. Smoked salmon + cream cheese on cucumber rounds = an appetizer that looks like you catered it yourself. Or just eat the whole plate as dinner. No judgment.",ing:[{n:'Smoked salmon',q:'6 oz'},{n:'Whipped cream cheese',q:'6 oz'},{n:'Mini cucumbers',q:'3'},{n:'Everything But the Bagel seasoning',q:'to taste'},{n:'Capers (optional)',q:'2 tbsp'}]},
+  {id:'n13',name:'Veggie Grain Bowl',time:15,benefits:['gut','energy','weight','anti'],synopsis:"TJ's ancient grains blend is a pantry hero — nutty, chewy, takes 10 minutes. Pile on roasted corn, black beans, avocado, salsa verde. This is the lunch that makes your coworkers jealous.",ing:[{n:'Ancient grains blend',q:'2 cups'},{n:'Roasted corn & peppers',q:'1 cup'},{n:'Organic black beans',q:'1 can'},{n:'Hass avocados',q:'1'},{n:'Organic salsa verde',q:'½ cup'}]},
+  {id:'n14',name:'Kung Pao Chicken',time:20,benefits:['muscle','immune','energy'],synopsis:"TJ's frozen Kung Pao is legitimately one of the better freezer meals on the planet. Serve over jasmine rice, throw in some scallions, and it tastes like Friday night takeout.",ing:[{n:'Kung pao chicken (frozen)',q:'2 bags'},{n:'Jasmine rice',q:'1½ cups dry'},{n:'Scallions',q:'3'},{n:'Sesame seeds',q:'1 tbsp'},{n:'Sriracha (optional)',q:'to taste'}]},
+],
+cheat:[
+  {id:'c1',name:'Truffle Mac & Cheese',time:15,benefits:['energy'],synopsis:"The fanciest boxed mac and cheese money can buy at Trader Joe's. Add a little extra butter, top with crispy panko, and suddenly it's dinner party food. Zero shame in this one.",ing:[{n:'Truffle mac & cheese box',q:'2 boxes'},{n:'Unsalted butter',q:'3 tbsp'},{n:'Whole milk',q:'½ cup'},{n:'Panko breadcrumbs',q:'3 tbsp'},{n:'Parmesan (optional)',q:'to taste'}]},
+  {id:'c2',name:'Mandarin Orange Chicken',time:20,benefits:['energy','muscle'],synopsis:"The TJ's legend. Crispy, saucy, deeply satisfying. This has been in the freezer section so long it has a fan club. Serve over jasmine rice with a side of broccoli and call it a win.",ing:[{n:'Mandarin orange chicken (frozen)',q:'2 bags'},{n:'Jasmine rice',q:'1½ cups dry'},{n:'Organic broccoli florets',q:'2 cups'},{n:'Sesame seeds',q:'1 tbsp'},{n:'Scallions',q:'2'}]},
+  {id:'c3',name:'Margherita Flatbread Pizza',time:15,benefits:['bone','energy'],synopsis:"Homemade pizza on a weeknight, no delivery fee, no 45-minute wait. Stretch the dough, top it, bake it. Watching cheese melt in the oven is one of life's great pleasures.",ing:[{n:'Pizza dough',q:'2 balls'},{n:'Tomato basil marinara',q:'1 cup'},{n:'Shredded mozzarella',q:'2 cups'},{n:'Fresh basil',q:'large handful'},{n:'Extra virgin olive oil',q:'2 tbsp'}]},
+  {id:'c4',name:'Buffalo Chicken Dip & Chips',time:20,benefits:['muscle','energy'],synopsis:"For the nights when dinner should feel like a Super Bowl party. Creamy, spicy, cheesy buffalo dip with crunchy chips. Technically an appetizer. Definitely a meal. No regrets.",ing:[{n:'Grilled chicken strips',q:'2 bags'},{n:'Cream cheese',q:'12 oz'},{n:'Buffalo sauce',q:'¾ cup'},{n:'Shredded cheddar',q:'1½ cups'},{n:'Multigrain tortilla chips',q:'1 large bag'}]},
+  {id:'c5',name:'Pancakes with Maple Syrup',time:20,benefits:['energy'],synopsis:"Fluffy, buttery pancakes on a Saturday morning is a form of self-care. TJ's buttermilk mix is foolproof. Stack high, drown in real maple syrup, and stare out the window in peace.",ing:[{n:'Buttermilk pancake mix',q:'2 cups'},{n:'Free range eggs',q:'2'},{n:'Whole milk',q:'1½ cups'},{n:'Unsalted butter',q:'3 tbsp'},{n:'Pure maple syrup',q:'to taste'}]},
+  {id:'c6',name:'Grilled Cheese & Tomato Soup',time:20,benefits:['immune','energy'],synopsis:"The comfort food power couple. Buttery, golden grilled cheese dunked in warm tomato soup. This is the dinner equivalent of putting on sweatpants. Pure joy.",ing:[{n:'Sourdough bread',q:'6 thick slices'},{n:'Shredded cheddar',q:'2 cups'},{n:'Tomato soup carton',q:'2 cartons'},{n:'Unsalted butter',q:'4 tbsp'},{n:'Fresh basil (for soup)',q:'handful'}]},
+  {id:'c7',name:'Loaded Nachos',time:20,benefits:['energy','bone'],synopsis:"Pile it high. Layer chips, melt cheese, add beans, top with guac and sour cream. This is dinner for people who believe nachos deserve more respect. They do.",ing:[{n:'Multigrain tortilla chips',q:'1 large bag'},{n:'Shredded cheddar',q:'1½ cups'},{n:'Organic black beans',q:'1 can'},{n:'Hass avocados',q:'2 (for guac)'},{n:'Organic salsa',q:'½ cup'},{n:'Sour cream',q:'½ cup'}]},
+  {id:'c8',name:"Joe-Joe's Ice Cream Sundae",time:5,benefits:['energy'],synopsis:"Sometimes dessert IS dinner. No justification needed. Joe-Joe cookies crumbled over vanilla ice cream with hot fudge is a top-10 food experience. Life is short. Eat the sundae.",ing:[{n:"Joe-Joe's cookies",q:'8'},{n:'Vanilla ice cream',q:'4 scoops'},{n:'Hot fudge sauce',q:'4 tbsp'},{n:'Whipped cream',q:'to taste'},{n:'Sprinkles (obviously)',q:'to taste'}]},
+],
+};
+
+function getM(id){for(const k of Object.keys(M)){const m=M[k].find(x=>x.id===id);if(m)return{...m,cat:k};}return null;}
+function getAllMeals(){return Object.entries(M).flatMap(([cat,meals])=>meals.map(m=>({...m,cat})));}
+function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
+function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+let cart=ls(SK_C)||[];
+let favs=ls(SK_F)||[];
+let chk=ls(SK_K)||{};
+let activeCats=new Set();
+let activeBenefit=null;
+let activeTime='all';
+let benefitsOpen=false;
+let showExp=false;
+
+function sw(tab){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tnav').forEach(t=>t.classList.remove('on'));
+  document.getElementById('s-'+tab).classList.add('on');
+  document.getElementById('t-'+tab).classList.add('on');
+  if(tab==='selected')renderSel();
+  if(tab==='cart')renderCart();
+  if(tab==='favs')renderFavs();
+}
+
+function upd(){
+  const n=cart.length;
+  ['sb','cb'].forEach(id=>{const el=document.getElementById(id);el.textContent=n;el.style.display=n?'inline':'none';});
+}
+
+function renderCats(){
+  document.getElementById('cat-grid').innerHTML=catDefs.map(c=>{
+    const on=activeCats.has(c.id);const dim=activeCats.size>0&&!on;
+    return `<button class="catb ${c.cls}${on?' on':''}${dim?' dimmed':''}" onclick="toggleCat('${c.id}')">
+      <div class="cat-emoji">${c.emoji}</div><div class="cat-name">${c.label}</div><div class="cat-desc">${c.desc}</div>
+    </button>`;
+  }).join('');
+}
+
+function toggleCat(id){
+  if(activeCats.has(id))activeCats.delete(id);else activeCats.add(id);
+  renderCats();renderBenefitTags();renderMeals();
+}
+
+function toggleBenefits(){
+  benefitsOpen=!benefitsOpen;
+  document.getElementById('benefit-body').classList.toggle('open',benefitsOpen);
+  document.getElementById('bchev').classList.toggle('open',benefitsOpen);
+}
+
+function getInScope(){
+  const all=getAllMeals();const sc=activeCats.size>0?all.filter(m=>activeCats.has(m.cat)):all;
+  const s=new Set();sc.forEach(m=>m.benefits.forEach(b=>s.add(b)));return s;
+}
+
+function renderBenefitTags(){
+  const inScope=getInScope();
+  document.getElementById('bf-wrap').innerHTML=Object.keys(BT).map(b=>{
+    const on=activeBenefit===b;const avail=inScope.has(b);
+    return `<button class="btag ${BT[b].cls}${on?' on':''}${!avail?' dimmed':''}" onclick="toggleBenefit('${b}')" ${!avail?'disabled':''}>${BT[b].emoji}<span class="btag-tip">${BT[b].lbl}</span></button>`;
+  }).join('');
+  const lbl=document.getElementById('bhdr-active');
+  if(activeBenefit){lbl.textContent=BT[activeBenefit].emoji+' '+BT[activeBenefit].lbl;lbl.style.display='inline';}
+  else lbl.style.display='none';
+  document.getElementById('clr-tag').style.display=activeBenefit?'inline':'none';
+}
+
+function toggleBenefit(b){activeBenefit=activeBenefit===b?null:b;renderBenefitTags();renderMeals();}
+function clearBenefit(){activeBenefit=null;renderBenefitTags();renderMeals();}
+
+function setTime(f,el){
+  activeTime=f;document.querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));el.classList.add('on');renderMeals();
+}
+
+function renderMeals(){
+  let filtered=getAllMeals();
+  if(activeCats.size>0)filtered=filtered.filter(m=>activeCats.has(m.cat));
+  if(activeBenefit)filtered=filtered.filter(m=>m.benefits.includes(activeBenefit));
+  if(activeTime==='quick')filtered=filtered.filter(m=>m.time<20);
+  if(activeTime==='few')filtered=filtered.filter(m=>m.ing.length<=5);
+  const parts=[];
+  if(activeCats.size>0)parts.push([...activeCats].map(c=>catDefs.find(x=>x.id===c)?.label).join(' & '));
+  if(activeBenefit)parts.push(BT[activeBenefit].emoji+' '+BT[activeBenefit].lbl);
+  document.getElementById('bsummary').textContent=filtered.length+' meal'+(filtered.length!==1?'s':'')+(parts.length?' · '+parts.join(' · '):'');
+  const area=document.getElementById('meals-area');
+  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-icon">😅</div><div class="empty-msg">Nothing matches these filters.<br>Try clearing one above.</div></div>';return;}
+  const byCat={};filtered.forEach(m=>{if(!byCat[m.cat])byCat[m.cat]=[];byCat[m.cat].push(m);});
+  const multi=Object.keys(byCat).length>1;
+  area.innerHTML=Object.keys(byCat).map(catId=>{
+    const cat=catDefs.find(c=>c.id===catId);
+    const hdr=multi?`<div class="cat-divider">${cat.emoji} ${cat.label}</div>`:'';
+    return hdr+byCat[catId].map(m=>{
+      const ic=cart.includes(m.id);const ifv=favs.includes(m.id);
+      const bTags=m.benefits.map(b=>`<span class="m-btag ${BT[b].cls}${activeBenefit===b?' on':''}" onclick="event.stopPropagation();toggleBenefit('${b}')">${BT[b].emoji}<span class="btag-tip">${BT[b].lbl}</span></span>`).join('');
+      return `<div class="meal-card${ic?' inc':''}" onclick="openModal('${m.id}')">
+        <div class="meal-card-top">
+          <div class="meal-row1">
+            <div class="meal-left">
+              <div class="meal-name">${m.name}</div>
+              <div class="meal-meta">⏱ ${m.time} min <span class="meal-dot"></span> ${m.ing.length} ingredients <span class="meal-dot"></span> 👥 feeds 2</div>
+            </div>
+            <div class="meal-actions">
+              <button class="mib${ifv?' fon':''}" onclick="event.stopPropagation();togFav('${m.id}')" aria-label="Save">♡</button>
+              <button class="mib${ic?' con':''}" onclick="event.stopPropagation();togCart('${m.id}')" aria-label="${ic?'Remove':'Add'}">${ic?'✓':'+'}</button>
+            </div>
+          </div>
+        </div>
+        <div class="meal-tags">${bTags}</div>
+      </div>`;
+    }).join('');
+  }).join('');
+}
+
+function openModal(id){
+  const m=getM(id);if(!m)return;
+  const cat=catDefs.find(c=>c.id===m.cat);
+  const ic=cart.includes(id);const ifv=favs.includes(id);
+  const bTags=m.benefits.map(b=>`<span class="modal-btag ${BT[b].cls}" style="cursor:pointer" onclick="toggleBenefit('${b}');closeModal()">${BT[b].emoji} ${BT[b].lbl}</span>`).join('');
+  const ings=m.ing.map(i=>`<div class="modal-ing"><span class="modal-ing-name">${i.n}</span><span class="modal-ing-qty">${i.q}</span></div>`).join('');
+  document.getElementById('modal-inner').innerHTML=`
+    <div class="modal-cat-label">${cat?.emoji} ${cat?.label}</div>
+    <div class="modal-title">${m.name}</div>
+    <div class="modal-meta">⏱ ${m.time} min · ${m.ing.length} ingredients</div>
+    <div class="modal-serves">👥 Recipe serves 2 people</div>
+    <div class="modal-synopsis">${m.synopsis}</div>
+    <div class="modal-section-title">Health benefits</div>
+    <div class="modal-tags">${bTags}</div>
+    <div class="modal-section-title">Ingredients to grab at TJ's</div>
+    <div class="modal-ing-list">${ings}</div>
+    <div class="modal-actions">
+      <button class="mbtn fav${ifv?' on':''}" onclick="togFav('${id}');rerenderModalFav('${id}')">${ifv?'♥ Saved':'♡ Save'}</button>
+      <button class="mbtn primary" id="modal-cart-btn" onclick="togCart('${id}');rerenderModalCart('${id}')">${ic?'✓ In cart':'+ Add to cart'}</button>
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function rerenderModalFav(id){
+  const ifv=favs.includes(id);const btn=document.querySelector('.modal .mbtn.fav');
+  if(btn){btn.textContent=ifv?'♥ Saved':'♡ Save';btn.classList.toggle('on',ifv);}
+}
+function rerenderModalCart(id){
+  const ic=cart.includes(id);const btn=document.getElementById('modal-cart-btn');
+  if(btn)btn.textContent=ic?'✓ In cart':'+ Add to cart';
+}
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modal-overlay')){
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow='';
+  }
+}
+
+function togFav(id){
+  favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];
+  ss(SK_F,favs);renderMeals();
+  if(document.getElementById('s-favs').classList.contains('on'))renderFavs();
+}
+
+function togCart(id){
+  cart=cart.includes(id)?cart.filter(x=>x!==id):[...cart,id];
+  ss(SK_C,cart);upd();renderMeals();
+  if(document.getElementById('s-selected').classList.contains('on'))renderSel();
+  if(document.getElementById('s-cart').classList.contains('on'))renderCart();
+}
+
+function renderSel(){
+  const body=document.getElementById('sel-body');const sub=document.getElementById('sel-sub');
+  if(!cart.length){sub.textContent='Nothing added yet';body.innerHTML='<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-msg">Add meals from Browse.<br>They\'ll appear here.</div></div>';return;}
+  sub.textContent=cart.length+' meal'+(cart.length>1?'s':'')+' · all feeds 2';
+  body.innerHTML=cart.map(id=>{
+    const m=getM(id);if(!m)return'';
+    const cat=catDefs.find(c=>c.id===m.cat);
+    const dots=m.benefits.slice(0,4).map(b=>`<span class="m-btag ${BT[b].cls}" style="width:26px;height:26px;font-size:13px" title="${BT[b].lbl}">${BT[b].emoji}<span class="btag-tip">${BT[b].lbl}</span></span>`).join('');
+    return `<div class="sel-card" onclick="openModal('${id}')">
+      <div class="sel-stripe" style="background:${cat?.dot||'#888'}"></div>
+      <div class="sel-info">
+        <div class="sel-name">${m.name}</div>
+        <div class="sel-meta">${cat?.label} · ${m.time} min · feeds 2</div>
+        <div class="sel-btags">${dots}</div>
+      </div>
+      <button class="sel-xbtn" onclick="event.stopPropagation();togCart('${id}')" aria-label="Remove">✕</button>
+    </div>`;
+  }).join('')+'<div class="abar"><button class="abtn primary" onclick="sw(\'cart\')">View shopping list →</button></div>';
+}
+
+function buildMerged(){
+  const map={};
+  cart.forEach(mid=>{
+    const m=getM(mid);if(!m)return;
+    m.ing.forEach(ing=>{
+      const k=ing.n.toLowerCase().trim();
+      if(!map[k]){map[k]={name:ing.n,qty:ing.q,count:0,meals:[]};}
+      map[k].count++;if(!map[k].meals.includes(mid))map[k].meals.push(mid);
+    });
+  });
+  return Object.values(map).sort((a,b)=>b.meals.length-a.meals.length||a.name.localeCompare(b.name));
+}
+function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'_');}
+
+function renderCart(){
+  const body=document.getElementById('cart-body');const sub=document.getElementById('cart-sub');
+  if(!cart.length){sub.textContent='All ingredients, one list';body.innerHTML='<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-msg">Add meals from Browse.<br>Everything merges into one clean list.</div></div>';return;}
+  const merged=buildMerged();const total=merged.length;
+  const done=merged.filter(i=>chk['i_'+slugify(i.name)]).length;
+  sub.textContent=cart.length+' meal'+(cart.length>1?'s':'')+' · '+total+' items'+(done?' · '+done+'/'+total+' ✓':'');
+  const anyChk=merged.some(i=>chk['i_'+slugify(i.name)]);
+  body.innerHTML=merged.map(ing=>{
+    const k='i_'+slugify(ing.name);const on=!!chk[k];
+    return `<div class="ing-row${on?' ckd':''}">
+      <div class="ing-cb${on?' on':''}" onclick="togChk('${k}')">${on?'✓':''}</div>
+      <div class="ing-name">${ing.name}${ing.meals.length>1?`<span class="multi-pill">×${ing.meals.length}</span>`:''}</div>
+      <div class="ing-qty">${ing.qty}</div>
+    </div>`;
+  }).join('')+'<div class="abar">'+(anyChk?'<button class="abtn" onclick="clearChk()" style="flex:0 1 auto;padding:13px 16px">↺</button>':'')+'<button class="abtn" onclick="toggleExp()">⎘ Export list</button></div>'+(showExp?'<div class="exp-box">'+buildExpTxt()+'</div><button class="abtn" id="cpybtn" onclick="copyExp()" style="width:100%;margin-top:8px">Copy to clipboard</button>':'');
+}
+
+function togChk(k){chk[k]=!chk[k];ss(SK_K,chk);renderCart();}
+function clearChk(){chk={};ss(SK_K,chk);renderCart();}
+function toggleExp(){showExp=!showExp;renderCart();}
+function clearCart(){cart=[];ss(SK_C,cart);upd();renderMeals();renderSel();showExp=false;renderCart();}
+
+function buildExpTxt(){
+  const merged=buildMerged();const names=cart.map(id=>getM(id)?.name).filter(Boolean);
+  let t="🛒 TJ's Shopping List (feeds 2)\nMeals: "+names.join(', ')+'\n\n';
+  merged.forEach(i=>{t+='☐ '+i.name+(i.meals.length>1?' (×'+i.meals.length+')':'')+' — '+i.qty+'\n';});
+  return t;
+}
+
+function copyExp(){
+  navigator.clipboard.writeText(buildExpTxt()).then(()=>{
+    const b=document.getElementById('cpybtn');if(b){b.textContent='✓ Copied!';setTimeout(()=>{b.textContent='Copy to clipboard';},2000);}
+  }).catch(()=>{});
+}
+
+function renderFavs(){
+  const body=document.getElementById('favs-body');
+  if(!favs.length){body.innerHTML='<div class="empty-state"><div class="empty-icon">♡</div><div class="empty-msg">Tap ♡ on any meal to save it.<br>Even the cookie skillet. No judgment.</div></div>';return;}
+  body.innerHTML=favs.map(id=>{
+    const m=getM(id);if(!m)return'';
+    const cat=catDefs.find(c=>c.id===m.cat);const ic=cart.includes(id);
+    const dots=m.benefits.slice(0,3).map(b=>`<span class="m-btag ${BT[b].cls}" style="width:26px;height:26px;font-size:13px" title="${BT[b].lbl}">${BT[b].emoji}<span class="btag-tip">${BT[b].lbl}</span></span>`).join('');
+    return `<div class="sel-card" onclick="openModal('${id}')">
+      <div class="sel-stripe" style="background:${cat?.dot||'#888'}"></div>
+      <div class="sel-info">
+        <div class="sel-name">${m.name}</div>
+        <div class="sel-meta">${cat?.label} · ${m.time} min</div>
+        <div class="sel-btags">${dots}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="mib${ic?' con':''}" onclick="event.stopPropagation();togCart('${id}')" aria-label="${ic?'Remove':'Add'}">${ic?'✓':'+'}</button>
+        <button class="mib fon" onclick="event.stopPropagation();togFav('${id}')" aria-label="Unsave">♥</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+renderCats();renderBenefitTags();renderMeals();upd();
+</script>
+</body>
+</html>
